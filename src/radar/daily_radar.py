@@ -4,17 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from src.collectors.yahoo import MarketSnapshot, YahooFinanceCollector
-
-
-THEME_MAP = {
-    "AI Infrastructure": {"NVDA", "AMD", "MSFT", "GOOGL", "META", "AMZN", "AVGO"},
-    "Semiconductors": {"TSM", "ASML", "INTC", "QCOM", "MU", "ARM", "SMH"},
-    "Power": {"SMR", "CEG", "VST", "NEE", "GEV", "ETN"},
-    "Defense": {"PLTR", "LMT", "RTX", "NOC", "GD"},
-    "Robotics": {"TSLA", "ISRG", "ROK", "TER", "BOTZ"},
-    "Space": {"RKLB", "LUNR", "ASTS", "BA", "LMT"},
-    "Macro Liquidity": {"SPY", "QQQ", "DIA", "IWM", "TLT", "GLD", "UUP"},
-}
+from src.knowledge.watchlist import load_watchlist, theme_for_ticker
 
 
 @dataclass(frozen=True)
@@ -41,8 +31,13 @@ class DailyRadarReport:
 
 
 class DailyRadar:
-    def __init__(self, collector: YahooFinanceCollector | None = None) -> None:
+    def __init__(
+        self,
+        collector: YahooFinanceCollector | None = None,
+        watchlist: dict[str, list[str]] | None = None,
+    ) -> None:
         self.collector = collector or YahooFinanceCollector()
+        self.watchlist = watchlist or load_watchlist()
 
     def run(
         self,
@@ -89,7 +84,7 @@ class DailyRadar:
 
         return RadarSignal(
             ticker=snapshot.ticker,
-            theme=self._theme_for(snapshot.ticker),
+            theme=theme_for_ticker(snapshot.ticker, self.watchlist),
             last_price=latest.close,
             previous_close=previous.close if previous else None,
             price_change_pct=price_change_pct,
@@ -100,13 +95,6 @@ class DailyRadar:
             source=snapshot.source,
             observed_at=latest.timestamp,
         )
-
-    def _theme_for(self, ticker: str) -> str:
-        symbol = ticker.upper()
-        for theme, tickers in THEME_MAP.items():
-            if symbol in tickers:
-                return theme
-        return "General Market"
 
     @staticmethod
     def _score(price_change_pct: float | None, volume_ratio: float | None) -> float:

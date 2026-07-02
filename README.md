@@ -8,6 +8,37 @@ Unlike traditional trading systems, GPF-AI-OS focuses on research, reasoning, an
 
 ---
 
+# Quick Start
+
+GPF-AI-OS targets Python 3.11.
+
+```bash
+python -m venv .venv
+pip install -r requirements.txt
+python main.py
+```
+
+The daily radar reads tickers from `data/watchlist.json` and writes a Markdown report under `data/reports/`.
+
+---
+
+# Configurable Watchlist
+
+Edit `data/watchlist.json` to change the radar universe without changing Python code.
+
+```json
+{
+  "AI Infrastructure": ["NVDA", "MSFT", "GOOGL", "AMD", "TSM", "ASML"],
+  "Defense": ["PLTR", "KTOS", "AVAV"],
+  "Power": ["SMR", "CEG", "VST"],
+  "Space": ["RKLB", "RDW"]
+}
+```
+
+The object keys are report themes. The ticker symbols in each list are collected from public Yahoo Finance chart data.
+
+---
+
 # Vision
 
 Build an AI-native research platform capable of continuously discovering:

@@ -7,23 +7,9 @@ from pathlib import Path
 
 from config import APP_NAME, DATA_DIR, LOG_DIR, VERSION
 from src.collectors.yahoo import YahooFinanceCollector
+from src.knowledge.watchlist import all_tickers, load_watchlist
 from src.radar.daily_radar import DailyRadar
 from src.reports.markdown_report import MarkdownReport
-
-
-DEFAULT_TICKERS = [
-    "NVDA",
-    "MSFT",
-    "AAPL",
-    "GOOGL",
-    "AMD",
-    "TSM",
-    "ASML",
-    "SMR",
-    "PLTR",
-    "SPY",
-    "QQQ",
-]
 
 
 def configure_logging() -> None:
@@ -42,12 +28,6 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="gpf-ai-os",
         description="Run the GPF-AI-OS Sprint 1 public-data daily radar.",
-    )
-    parser.add_argument(
-        "--tickers",
-        nargs="+",
-        default=DEFAULT_TICKERS,
-        help="Ticker symbols to scan. Defaults to a public AI infrastructure watchlist.",
     )
     parser.add_argument(
         "--range",
@@ -80,12 +60,14 @@ def main() -> int:
     logger = logging.getLogger(__name__)
     args = parse_args()
     output_path = args.output or default_report_path()
+    watchlist = load_watchlist()
+    tickers = all_tickers(watchlist)
 
-    logger.info("running daily radar for %d tickers", len(args.tickers))
+    logger.info("running daily radar for %d configured tickers", len(tickers))
     collector = YahooFinanceCollector()
-    radar = DailyRadar(collector=collector)
+    radar = DailyRadar(collector=collector, watchlist=watchlist)
     report = radar.run(
-        tickers=args.tickers,
+        tickers=tickers,
         range_value=args.range,
         interval=args.interval,
     )
